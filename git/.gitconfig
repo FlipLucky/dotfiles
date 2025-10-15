@@ -1,0 +1,37 @@
+[user]
+	name = bnoblesse
+	email = b.noblesse@netants.nl
+[column]
+        ui = auto
+[branch]
+        sort = -committerdate
+[tag]
+        sort = version:refname
+[init]
+        defaultBranch = main
+[diff]
+        algorithm = histogram
+        colorMoved = plain
+        mnemonicPrefix = true
+        renames = true
+[push]
+        default = simple
+        autoSetupRemote = true
+        followTags = true
+[fetch]
+        prune = true
+        pruneTags = true
+        all = true
+[core]
+    pager = delta
+[interactive]
+    diffFilter = delta --color-only
+[delta]
+    navigate = true
+    dark = true
+    syntax-theme = Dracula
+    plus-style = "syntax #012800"
+    minus-style = "syntax #340001"
+    line-numbers = true
+[merge]
+    conflictStyle = zdiff3
