@@ -57,6 +57,8 @@ vim.opt.undofile = true
 -- Set the default border for all floating windows
 vim.opt.winborder = "rounded"
 
+vim.opt.smoothscroll = true
+
 -- Virtual text for errors
 vim.fn.sign_define("DiagnosticSignError", { text = "", texthl = "DiagnosticSignError" })
 vim.fn.sign_define("DiagnosticSignWarn", { text = "", texthl = "DiagnosticSignWarn" })
@@ -145,6 +147,8 @@ vim.pack.add({
 	{ src = "https://github.com/echasnovski/mini.pick" },
 	{ src = "https://github.com/echasnovski/mini.pairs" },
 	{ src = "https://github.com/echasnovski/mini.statusline" },
+	{ src = "https://github.com/echasnovski/mini.ai" },
+	{ src = "https://github.com/echasnovski/mini.animate" },
 	{ src = "https://github.com/neovim/nvim-lspconfig" },
 	{ src = "https://github.com/mason-org/mason.nvim" },
 	{ src = "https://github.com/mason-org/mason-lspconfig.nvim" },
@@ -399,8 +403,26 @@ vim.lsp.config("phpactor", {})
 
 require("mini.pick").setup()
 require("mini.pairs").setup()
+require("mini.ai").setup()
+local animate = require("mini.animate")
+animate.setup({
+	scroll = {
+		enable = true,
+		-- Default timing
+		timing = animate.gen_timing.linear({ duration = 250, unit = "total" }),
+		-- Customize subscroll to ignore small movements
+		subscroll = animate.gen_subscroll.equal({
+			predicate = function(total_scroll)
+				-- Only animate if the scroll distance is more than 2 lines
+				-- This effectively kills the stutter for j/k and mouse wheels
+				return total_scroll > 2
+			end,
+		}),
+	},
+	-- You can leave the rest as default or omit them if you aren't changing them
+	cursor = { enable = true },
+})
 require("oil").setup()
-
 vim.keymap.set("n", "<leader>ff", ":Pick files<CR>")
 vim.keymap.set("n", "<leader>fh", ":Pick help<CR>")
 vim.keymap.set("n", "<leader>ft", ":Pick grep<CR>")
