@@ -1,144 +1,62 @@
 --------------------------------------------------------------
--- Globals --
+-- 1. Globals & Options
 --------------------------------------------------------------
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
-
-vim.opt.clipboard:append({ "unnamed", "unnamedplus" })
-
-vim.cmd("colorscheme retrobox")
-
--- set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
+local opt = vim.opt
+opt.number = true
+opt.relativenumber = true
+opt.signcolumn = "yes"
+opt.cursorline = true
+opt.smoothscroll = true
+opt.swapfile = false
+opt.undofile = true
+opt.updatetime = 1000
+opt.ignorecase = true
+opt.smartcase = true
+opt.expandtab = true
+opt.tabstop = 4
+opt.softtabstop = 4
+opt.shiftwidth = 4
+opt.list = true
+opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
+opt.inccommand = "split"
+opt.wrap = true
+opt.breakindent = true
+opt.splitright = true
+opt.splitbelow = true
+opt.winborder = "rounded"
+opt.clipboard:append({ "unnamed", "unnamedplus" })
+
 --------------------------------------------------------------
--- Options --
+-- 2. UI, Colors & Diagnostics
 --------------------------------------------------------------
+vim.cmd("colorscheme retrobox")
 
--- Relative and absolute line numbers
-vim.opt.number = true
-vim.opt.relativenumber = true
-
--- Keep sign column on by default
-vim.opt.signcolumn = "yes"
--- No swapfile
-vim.opt.swapfile = false
--- Cursorline
-vim.opt.cursorline = true
-
--- show whitespace characters
-vim.opt.list = true
-vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
-
--- Search
-vim.opt.ignorecase = true
-vim.opt.smartcase = true
-
--- Preview substitutions
-vim.opt.inccommand = "split"
-
--- Text wrapping
-vim.opt.wrap = true
-vim.opt.breakindent = true
-
--- Tabstops
-vim.opt.expandtab = true
-vim.opt.tabstop = 4
-vim.opt.softtabstop = 4
-vim.opt.shiftwidth = 4
-
--- Window splitting
-vim.opt.splitright = true
-vim.opt.splitbelow = true
-
--- Save undo history
-vim.opt.undofile = true
-
--- Set the default border for all floating windows
-vim.opt.winborder = "rounded"
-
-vim.opt.smoothscroll = true
-
--- Virtual text for errors
 vim.fn.sign_define("DiagnosticSignError", { text = "", texthl = "DiagnosticSignError" })
 vim.fn.sign_define("DiagnosticSignWarn", { text = "", texthl = "DiagnosticSignWarn" })
 vim.fn.sign_define("DiagnosticSignInfo", { text = "", texthl = "DiagnosticSignInfo" })
 vim.fn.sign_define("DiagnosticSignHint", { text = "💡", texthl = "DiagnosticSignHint" })
 
 vim.diagnostic.config({
-	-- Show diagnostics as virtual text
-	virtual_text = {
-		spacing = 4, -- Add some space between the code and the text
-		prefix = "●", -- Or use '»' or any other character
-		severity_sort = true, -- Show highest severity diagnostic first
-	},
-
-	-- Show signs in the gutter
+	virtual_text = { spacing = 4, prefix = "●", severity_sort = true },
 	signs = true,
-
-	-- Underline the problematic code
 	underline = true,
-
-	-- Show diagnostic messages in a floating window when you hover
 	update_in_insert = false,
 	severity_sort = true,
 })
 
--- Optional: Open a floating window with diagnostic details on hover
-vim.o.updatetime = 250 -- Decrease update time
-vim.cmd([[
-  autocmd CursorHold * lua vim.diagnostic.open_float(nil, { focus = false })
-]])
-
---------------------------------------------------------------
--- Keymap --
---------------------------------------------------------------
-
-local opts = { noremap = true, silent = true, buffer = bufnr }
-vim.keymap.set("n", "<leader>o", ":update<CR> :source<CR>")
-vim.keymap.set("n", "<leader>lf", vim.lsp.buf.format)
-vim.keymap.set("n", "<leader>k", vim.lsp.buf.hover, opts)
-vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
-vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
-vim.keymap.set("n", "gt", vim.lsp.buf.type_definition, opts)
-vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
-vim.keymap.set("n", "]q", "<cmd>cnext<CR>zz", { desc = "Next Quickfix Item" })
-vim.keymap.set("n", "[q", "<cmd>cprevious<CR>zz", { desc = "Previous Quickfix Item" })
--- Paste from the 'yank' register (0)
-vim.keymap.set({ "n", "v" }, "<leader>p", '"0p', { desc = "Paste from Yank Register" })
-vim.keymap.set({ "n", "v" }, "<leader>P", '"0P', { desc = "Paste from Yank Register (before)" })
--- autosave format
-vim.api.nvim_create_autocmd("BufWritePre", {
-	group = vim.api.nvim_create_augroup("LspFormatting", { clear = true }),
-	pattern = "*", -- or specific filetypes like { "*.lua", "*.rs" }
-	callback = function(args)
-		-- explicit bufnr usually safer in callbacks
-		vim.lsp.buf.format({ bufnr = args.buf })
-	end,
-})
--- Set how many ms of inactivity triggers the CursorHold event
--- Default is 4000ms, which is too slow for autosave.
--- 1000ms is a safe sweet spot; 200ms is "aggressive".
-vim.opt.updatetime = 1000
-
-vim.api.nvim_create_autocmd({ "CursorHold", "FocusLost", "BufLeave" }, {
-	group = vim.api.nvim_create_augroup("NativeAutoSave", { clear = true }),
+vim.api.nvim_create_autocmd("CursorHold", {
 	callback = function()
-		-- Only save normal file buffers (ignore terminals, prompts, etc.)
-		-- and only if they have changes.
-		if vim.bo.buftype == "" and vim.bo.modified then
-			vim.cmd("silent! update")
-
-			-- Optional: visual feedback in command line
-			-- vim.api.nvim_echo({ { "󰆓 Saved", "Normal" } }, false, {})
-		end
+		vim.diagnostic.open_float(nil, { focus = false })
 	end,
 })
+
 --------------------------------------------------------------
--- Plugins --
+-- 3. Package Management (0.12 Native)
 --------------------------------------------------------------
----
 vim.pack.add({
 	{ src = "https://github.com/OXY2DEV/markview.nvim" },
 	{ src = "https://github.com/nvim-lua/plenary.nvim" },
@@ -148,7 +66,9 @@ vim.pack.add({
 	{ src = "https://github.com/echasnovski/mini.pairs" },
 	{ src = "https://github.com/echasnovski/mini.statusline" },
 	{ src = "https://github.com/echasnovski/mini.ai" },
+	{ src = "https://github.com/echasnovski/mini.snippets" },
 	{ src = "https://github.com/echasnovski/mini.animate" },
+	{ src = "https://github.com/echasnovski/mini.indentscope" },
 	{ src = "https://github.com/neovim/nvim-lspconfig" },
 	{ src = "https://github.com/mason-org/mason.nvim" },
 	{ src = "https://github.com/mason-org/mason-lspconfig.nvim" },
@@ -170,10 +90,8 @@ vim.pack.add({
 	{ src = "https://github.com/mfussenegger/nvim-dap" },
 	{ src = "https://github.com/rcarriga/nvim-dap-ui" },
 	{ src = "https://github.com/jay-babu/mason-nvim-dap.nvim" },
-
 	{ src = "https://github.com/antoinemadec/FixCursorHold.nvim" },
 	{ src = "https://github.com/nvim-neotest/neotest" },
-	{ src = "https://github.com/nvim-neotest/nvim-nio" },
 	{ src = "https://github.com/olimorris/neotest-phpunit" },
 	{ src = "https://github.com/sidlatau/neotest-dart" },
 	{ src = "https://github.com/fredrikaverpil/neotest-golang" },
@@ -183,271 +101,160 @@ vim.pack.add({
 	{ src = "https://github.com/oysandvik94/curl.nvim" },
 	{ src = "https://github.com/toppair/peek.nvim" },
 	{ src = "https://github.com/stevearc/conform.nvim" },
+	{ src = "https://github.com/NeogitOrg/neogit" },
 })
 
 --------------------------------------------------------------
--- Plugin Setup --
+-- 4. Plugin Configurations
 --------------------------------------------------------------
--- flutter and go can be commented out, these are for my personal setup if you dont want to use them
 require("markview").setup()
-require("flutter-tools").setup({})
-require("go").setup()
 require("nvim-treesitter").setup()
 require("match-up").setup({})
 require("bamboo").load()
-require("mason").setup()
-require("mason-lspconfig").setup()
-require("mini.statusline").setup({
-	-- 'builtin' theme adapts to your color scheme automatically
-	content = {
-		-- Override content to keep it simple if desired
-		active = nil,
-		inactive = nil,
-	},
-	use_icons = true,
-	set_vim_settings = false, -- We will set LastStatus manually if we want
-})
-local neotest = require("neotest")
-
-neotest.setup({
-	adapters = {
-		require("neotest-phpunit")({
-			-- Optional: Custom phpunit command or args
-			filter_dirs = { "vendor" },
-		}),
-		require("neotest-dart")({
-			command = "flutter test", -- or "dart test"
-		}),
-		require("neotest-golang"),
-	},
-	-- "Click to go to error" equivalent:
-	output = {
-		open_on_run = true,
-	},
-	status = { virtual_text = true },
-	quickfix = {
-		enabled = true, -- Auto-open QF list on failure if you prefer that over floating windows
-	},
-})
-
--- Keymaps (The workflow)
-local map = vim.keymap.set
-map("n", "<leader>tt", function()
-	neotest.run.run()
-end, { desc = "Run nearest test" })
-map("n", "<leader>tf", function()
-	neotest.run.run(vim.fn.expand("%"))
-end, { desc = "Run current file" })
-map("n", "<leader>ta", function()
-	neotest.run.run("test")
-end, { desc = "Run All Tests" })
-map("n", "<leader>to", function()
-	neotest.output.open({ enter = true })
-end, { desc = "Show Output" })
-map("n", "<leader>ts", function()
-	neotest.summary.toggle()
-end, { desc = "Toggle Summary Panel" })
-
-require("peek").setup(opts)
-vim.api.nvim_create_user_command("PeekOpen", require("peek").open, {})
-vim.api.nvim_create_user_command("PeekClose", require("peek").close, {})
-require("fastaction").setup(opts)
-require("trouble").setup()
-require("curl").setup()
--- vim.keymap.set(
--- 	{ "n", "x" },
--- 	"<leader>ca",
--- 	'<cmd>lua require("fastaction").code_action()<CR>',
--- 	{ desc = "Display code actions", buffer = bufnr }
--- )
--- open trouble window
-vim.keymap.set("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", {})
--- Jump to next/previous trouble item
-vim.keymap.set("n", "]t", function()
-	require("trouble").next({ jump = true })
-end, { silent = true, noremap = true, desc = "Next trouble item" })
-vim.keymap.set("n", "[t", function()
-	require("trouble").previous({ jump = true })
-end, { silent = true, noremap = true, desc = "Previous trouble item" })
--- Run file
-vim.keymap.set("n", "<leader>tf", function()
-	require("neotest").run.run(vim.fn.expand("%"))
-end, { desc = "[T]est [F]ile" })
--- Run nearest
-vim.keymap.set("n", "<leader>tn", function()
-	require("neotest").run.run()
-end, { desc = "[T]est [N]earest" })
--- Show summary window
-vim.keymap.set("n", "<leader>ts", function()
-	require("neotest").summary.toggle()
-end, { desc = "[T]est [S]ummary" })
--- Stop nearest
-vim.keymap.set("n", "<leader>tx", function()
-	require("neotest").run.stop()
-end, { desc = "[T]est stop [X]" })
-
--- In your on_attach function (recommended)
-local bufopts = { noremap = true, silent = true, buffer = bufnr }
-vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, bufopts)
-
--- Or as a global fallback
-vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, { desc = "LSP Code Action" })
-
-local conform = require("conform")
-
-conform.setup({
-	-- Map filetypes to formatters
-	formatters_by_ft = {
-		php = { "phpcbf" },
-		-- You can add others here
-		-- lua = { "stylua" },
-		-- javascript = { "prettier" },
-	},
-
-	-- Custom config for phpcbf to prioritize local vendor/bin
-	formatters = {
-		phpcbf = {
-			-- This utility finds the executable in the project root first, then fallback to global
-			command = require("conform.util").find_executable({
-				"vendor/bin/phpcbf",
-				"phpcbf",
-			}),
-		},
-	},
-
-	-- Optional: Set default options for formatting
-	default_format_opts = {
-		lsp_format = "fallback", -- Use LSP if no formatter is defined above
-	},
-})
-
--- 3. Replace your keymap
-vim.keymap.set("n", "<leader>cf", function()
-	conform.format({ async = true })
-end, { desc = "Format buffer" })
-
-local dap_adapters = {
-	"delve",
-	"php-debug-adapter",
-	"dart-debug-adapter",
-}
-
-local lsps_and_linters = {
-	"lua_ls",
-	"stylua",
-	"phpactor",
-	"ts_ls",
-	"emmet_ls",
-}
-
-local tools_to_install = {}
-vim.list_extend(tools_to_install, lsps_and_linters)
-vim.list_extend(tools_to_install, dap_adapters)
-require("mason-tool-installer").setup({
-	ensure_installed = tools_to_install,
-})
-require("blink.cmp").setup({
-	keymap = { preset = "super-tab" },
-	appearance = { nerd_font_variant = "mono" },
-	signature = { enabled = true },
-	snippets = {
-		preset = "luasnip",
-	},
-})
-vim.cmd("set completeopt+=noselect")
-
-vim.lsp.enable(lsps_and_linters)
-
-vim.lsp.config("lua_ls", {
-	settings = {
-		Lua = {
-			workspace = {
-				library = vim.api.nvim_get_runtime_file("", true),
-			},
-		},
-	},
-})
-
-vim.lsp.config("ts_ls", {})
-
-vim.lsp.config("emmet_ls", {
-	filetypes = {
-		"html",
-		"css",
-		"scss",
-		"less",
-		"typescriptreact", --SolidJS TSX
-		"javascriptreact", --SolidJS JSX
-		"twig",
-	},
-	settings = {
-		emmet = {
-			jsx = {
-				options = {
-					["markup.attributes"] = {
-						["class"] = "class",
-						["class*"] = "styleName",
-						["for"] = "for",
-					},
-				},
-				syntaxProfiles = {
-					typescriptreact = "html",
-					javascriptreact = "html",
-				},
-			},
-		},
-	},
-})
-
-vim.lsp.config("phpactor", {})
-
-require("mini.pick").setup()
 require("mini.pairs").setup()
 require("mini.ai").setup()
+require("mini.indentscope").setup()
+require("oil").setup()
+require("peek").setup()
+require("fastaction").setup({})
+require("trouble").setup()
+require("curl").setup()
+require("mini.statusline").setup({ use_icons = true, set_vim_settings = false })
+require("neogit").setup({})
+
+-- Mini Animate (Stutter Fix)
 local animate = require("mini.animate")
 animate.setup({
 	scroll = {
 		enable = true,
-		-- Default timing
 		timing = animate.gen_timing.linear({ duration = 250, unit = "total" }),
-		-- Customize subscroll to ignore small movements
 		subscroll = animate.gen_subscroll.equal({
 			predicate = function(total_scroll)
-				-- Only animate if the scroll distance is more than 2 lines
-				-- This effectively kills the stutter for j/k and mouse wheels
 				return total_scroll > 2
 			end,
 		}),
 	},
-	-- You can leave the rest as default or omit them if you aren't changing them
 	cursor = { enable = true },
 })
-require("oil").setup()
-vim.keymap.set("n", "<leader>ff", ":Pick files<CR>")
-vim.keymap.set("n", "<leader>fh", ":Pick help<CR>")
-vim.keymap.set("n", "<leader>ft", ":Pick grep<CR>")
-vim.keymap.set("n", "<leader>fb", ":Pick buffers <CR>")
-vim.keymap.set("n", "<leader>e", ":Oil<CR>")
-vim.keymap.set("n", "<leader>o", ":update<CR> :source<CR>")
--- ===============================================================
--- DAP Setup (for nvim 0.12+)
--- ===============================================================
+-- Mini Snippets
+local gen_loader = require("mini.snippets").gen_loader
+require("mini.snippets").setup({
+	snippets = {
+		-- Load custom file with global snippets first (adjust for Windows)
+		gen_loader.from_file("~/.config/nvim/snippets/global.lua"),
 
--- Bridge Mason and nvim-dap
+		-- Load snippets based on current language by reading files from
+		-- "snippets/" subdirectories from 'runtimepath' directories.
+		gen_loader.from_lang(),
+	},
+})
+-- Conform (Formatting Fix)
+local conform = require("conform")
+conform.setup({
+	formatters_by_ft = { php = { "phpcbf" } },
+	formatters = {
+		phpcbf = {
+			command = function()
+				return require("conform.util").find_executable({ "vendor/bin/phpcbf", "phpcbf" }, "phpcbf")
+			end,
+		},
+	},
+	default_format_opts = { lsp_format = "fallback" },
+})
+
+-- Neotest
+local neotest = require("neotest")
+neotest.setup({
+	adapters = {
+		require("neotest-phpunit")({ filter_dirs = { "vendor" } }),
+		require("neotest-dart")({ command = "flutter test" }),
+		require("neotest-golang"),
+	},
+	output = { open_on_run = true },
+	status = { virtual_text = true },
+	quickfix = { enabled = true },
+})
+
+--------------------------------------------------------------
+-- 5. Completion (Blink.cmp) & LSP
+--------------------------------------------------------------
+local blink = require("blink.cmp")
+blink.setup({
+	keymap = { preset = "super-tab" },
+	appearance = { nerd_font_variant = "mono" },
+	signature = { enabled = true },
+	snippets = { preset = "mini_snippets" },
+	sources = {
+		default = { "lsp", "path", "snippets", "buffer" },
+		per_filetype = {
+			go = { "lsp", "path", "snippets" },
+		},
+	},
+	completion = {
+		documentation = { auto_show = true, auto_show_delay_ms = 500 },
+		list = { selection = { preselect = false, auto_insert = true } },
+	},
+})
+
+vim.cmd("set completeopt+=noselect")
+
+-- LSP Config
+local caps = blink.get_lsp_capabilities()
+local lsps = { "lua_ls", "ts_ls", "emmet_ls", "phpactor", "gopls" }
+local dap_adapters = { "delve", "php-debug-adapter", "dart-debug-adapter" }
+
+require("mason").setup()
+require("mason-lspconfig").setup()
+require("mason-tool-installer").setup({
+	ensure_installed = vim.list_extend(vim.list_extend({}, lsps), dap_adapters),
+})
+
+-- 0.12+ Native LSP Enablement with Blink Capabilities
+vim.lsp.enable(lsps)
+
+vim.lsp.config("lua_ls", {
+	capabilities = caps,
+	settings = { Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true) } } },
+})
+
+vim.lsp.config("gopls", {
+	capabilities = caps,
+	settings = {
+		gopls = {
+			usePlaceholders = true,
+			completeUnimported = true,
+			experimentalPostfixCompletions = true, -- Senior Go optimization
+		},
+	},
+})
+
+vim.lsp.config("phpactor", { capabilities = caps })
+vim.lsp.config("ts_ls", { capabilities = caps })
+vim.lsp.config("emmet_ls", {
+	capabilities = caps,
+	filetypes = { "html", "css", "scss", "less", "typescriptreact", "javascriptreact", "twig" },
+})
+
+-- Language Specific Tools
+require("go").setup({ lsp_cfg = { capabilities = caps } })
+require("flutter-tools").setup({
+	lsp = {
+		capabilities = caps,
+		color_render = true,
+		settings = { showTodos = true, completeFunctionCalls = true },
+	},
+})
+
+--------------------------------------------------------------
+-- 6. Debugging (DAP)
+--------------------------------------------------------------
+local dap, dapui = require("dap"), require("dapui")
 require("mason-nvim-dap").setup({
 	ensure_installed = dap_adapters,
 	automatic_installation = true,
-	handlers = {},
 })
 
---
-local dap = require("dap")
-local dapui = require("dapui")
-
--- Setup the DAP UI
 dapui.setup()
-
--- Add listeners to open/close the UI automatically
 dap.listeners.after.event_initialized["dapui_config"] = function()
 	dapui.open()
 end
@@ -457,14 +264,91 @@ end
 dap.listeners.before.event_exited["dapui_config"] = function()
 	dapui.close()
 end
---
-vim.keymap.set("n", "<leader>db", dap.toggle_breakpoint, { desc = "DAP: Toggle Breakpoint" })
-vim.keymap.set("n", "<leader>dc", dap.continue, { desc = "DAP: Continue" })
-vim.keymap.set("n", "<leader>do", dap.step_over, { desc = "DAP: Step Over" })
-vim.keymap.set("n", "<leader>di", dap.step_into, { desc = "DAP: Step Into" })
-vim.keymap.set("n", "<leader>du", dap.step_out, { desc = "DAP: Step Out" })
-vim.keymap.set("n", "<leader>dr", dap.repl.open, { desc = "DAP: Open REPL" })
-vim.keymap.set("n", "<leader>dt", dap.terminate, { desc = "DAP: Terminate Session" })
-vim.keymap.set("n", "<leader>dl", function()
+
+--------------------------------------------------------------
+-- 7. Keymaps
+--------------------------------------------------------------
+local map = vim.keymap.set
+
+-- Config & File
+map("n", "<leader>o", ":update<CR>:source<CR>", { desc = "Reload Config" })
+map("n", "<leader>e", ":Oil<CR>", { desc = "Oil" })
+map({ "n", "v" }, "<leader>p", '"0p', { desc = "Paste from Yank" })
+
+-- LSP & Formatting
+map("n", "<leader>lf", vim.lsp.buf.format)
+map("n", "<leader>k", vim.lsp.buf.hover)
+map("n", "gd", vim.lsp.buf.definition)
+map("n", "gD", vim.lsp.buf.declaration)
+map("n", "gr", vim.lsp.buf.references)
+map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action)
+map("n", "<leader>cf", function()
+	conform.format({ async = true })
+end)
+
+-- Navigation (Quickfix & Trouble)
+map("n", "]q", "<cmd>cnext<CR>zz")
+map("n", "[q", "<cmd>cprevious<CR>zz")
+map("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>")
+map("n", "]t", function()
+	require("trouble").next({ jump = true })
+end)
+map("n", "[t", function()
+	require("trouble").previous({ jump = true })
+end)
+
+-- Mini.Pick
+require("mini.pick").setup()
+map("n", "<leader>ff", ":Pick files<CR>")
+map("n", "<leader>ft", ":Pick grep<CR>")
+map("n", "<leader>fb", ":Pick buffers<CR>")
+map("n", "<leader>fh", ":Pick help<CR>")
+
+-- Neotest
+map("n", "<leader>tt", function()
+	neotest.run.run()
+end)
+map("n", "<leader>tf", function()
+	neotest.run.run(vim.fn.expand("%"))
+end)
+map("n", "<leader>ta", function()
+	neotest.run.run("test")
+end)
+map("n", "<leader>ts", function()
+	neotest.summary.toggle()
+end)
+map("n", "<leader>to", function()
+	neotest.output.open({ enter = true })
+end)
+
+-- DAP
+map("n", "<leader>db", dap.toggle_breakpoint)
+map("n", "<leader>dc", dap.continue)
+map("n", "<leader>dt", dap.terminate)
+map("n", "<leader>dl", function()
 	dapui.toggle()
-end, { desc = "DAP: Toggle UI" })
+end)
+-- NeoGit
+vim.keymap.set("n", "<leader>ng", "<cmd>Neogit<cr>", { desc = "Open Neogit UI" })
+--------------------------------------------------------------
+-- 8. Autocmds
+--------------------------------------------------------------
+local augroup = vim.api.nvim_create_augroup
+
+-- Native AutoSave logic
+vim.api.nvim_create_autocmd({ "CursorHold", "FocusLost", "BufLeave" }, {
+	group = augroup("NativeAutoSave", { clear = true }),
+	callback = function()
+		if vim.bo.buftype == "" and vim.bo.modified then
+			vim.cmd("silent! update")
+		end
+	end,
+})
+
+-- Auto Format on Save
+vim.api.nvim_create_autocmd("BufWritePre", {
+	group = augroup("LspFormatting", { clear = true }),
+	callback = function(args)
+		vim.lsp.buf.format({ bufnr = args.buf })
+	end,
+})
