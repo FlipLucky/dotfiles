@@ -118,6 +118,7 @@ alias dcs='docker compose stop'
 alias gc='git commit'
 alias gs='git status'
 alias gbc='git branch --show-current'
+alias np='nvim ~/Documents/notes.md'
 
 export NVM_DIR="$HOME/.config/nvm"
 export PATH=$PATH:/usr/local/go/bin
@@ -129,4 +130,10 @@ export PATH=$PATH:/usr/local/go/bin
 export RM_DEVELOPER_IDENTITY="bas"
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 export N8N_LOG_LEVEL=debug
+export N8N_DEV_RELOAD=true
 export PATH=$PATH:$(go env GOPATH)/bin
+
+# Only launch tmux if we are in an interactive shell and NOT already in tmux
+if [[ -z "$TMUX" && -n "$PS1" ]]; then
+    tmux attach-session -t default || tmux new-session -s default
+fi

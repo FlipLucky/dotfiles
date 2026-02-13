@@ -30,6 +30,8 @@ opt.splitbelow = true
 opt.winborder = "rounded"
 opt.clipboard:append({ "unnamed", "unnamedplus" })
 
+vim.opt.spell = true
+vim.opt.spelllang = { "en_us", "nl" }
 --------------------------------------------------------------
 -- 2. UI, Colors & Diagnostics
 --------------------------------------------------------------
@@ -69,6 +71,7 @@ vim.pack.add({
 	{ src = "https://github.com/echasnovski/mini.snippets" },
 	{ src = "https://github.com/echasnovski/mini.animate" },
 	{ src = "https://github.com/echasnovski/mini.indentscope" },
+	{ src = "https://github.com/echasnovski/mini.surround" },
 	{ src = "https://github.com/neovim/nvim-lspconfig" },
 	{ src = "https://github.com/mason-org/mason.nvim" },
 	{ src = "https://github.com/mason-org/mason-lspconfig.nvim" },
@@ -102,18 +105,70 @@ vim.pack.add({
 	{ src = "https://github.com/toppair/peek.nvim" },
 	{ src = "https://github.com/stevearc/conform.nvim" },
 	{ src = "https://github.com/NeogitOrg/neogit" },
+	{ src = "https://github.com/folke/which-key.nvim" },
+	{ src = "https://github.com/folke/snacks.nvim" },
+
+	-- Keymaps
 })
 
 --------------------------------------------------------------
 -- 4. Plugin Configurations
 --------------------------------------------------------------
 require("markview").setup()
-require("nvim-treesitter").setup()
+require("nvim-treesitter.configs").setup({
+	ensure_installed = {
+		"lua",
+		"dart",
+		"vim",
+		"go",
+		"php",
+	},
+	indent = {
+		enable = true,
+	},
+})
 require("match-up").setup({})
 require("bamboo").load()
 require("mini.pairs").setup()
-require("mini.ai").setup()
+local ai = require("mini.ai")
+ai.setup({
+	n_lines = 500,
+	custom_textobjects = {
+		-- Key: 'F' for Function Definition
+		-- Value: The TreeSitter spec
+		F = ai.gen_spec.treesitter({
+			a = "@function.outer", -- 'a'round: the whole function + 'end'
+			i = "@function.inner", -- 'i'nside: just the body
+		}),
+
+		-- Optional: You can also enhance 'o' for Class/Object definitions
+		o = ai.gen_spec.treesitter({
+			a = "@class.outer",
+			i = "@class.inner",
+		}),
+	},
+})
 require("mini.indentscope").setup()
+require("mini.surround").setup({
+	-- Defaults are clean, but note the deviation from 'vim-surround':
+	-- Add: sa (Surround Add)
+	-- Delete: sd (Surround Delete)
+	-- Replace: sr (Surround Replace)
+	mappings = {
+		add = "sa", -- Add surrounding in Normal and Visual modes
+		delete = "sd", -- Delete surrounding
+		find = "sf", -- Find surrounding (to the right)
+		find_left = "sF", -- Find surrounding (to the left)
+		highlight = "sh", -- Highlight surrounding
+		replace = "sr", -- Replace surrounding
+		update_n_lines = "sn", -- Update `n_lines`
+	},
+})
+
+require("snacks").setup({
+	scratch = { enabled = true },
+	-- other modules...
+})
 require("oil").setup()
 require("peek").setup()
 require("fastaction").setup({})
@@ -121,7 +176,20 @@ require("trouble").setup()
 require("curl").setup()
 require("mini.statusline").setup({ use_icons = true, set_vim_settings = false })
 require("neogit").setup({})
-
+local wk = require("which-key")
+wk.setup({})
+-- Replace the wk.add block in Section 4
+wk.add({
+	{ "[", group = "Previous" },
+	{ "]", group = "Next" },
+	{ "g", group = "Go / LSP" },
+	{ "<leader>c", group = "Code" },
+	{ "<leader>d", group = "Debug" },
+	{ "<leader>f", group = "Find (Pick)" },
+	{ "<leader>l", group = "LSP" },
+	{ "<leader>t", group = "Test" },
+	{ "<leader>x", group = "Trouble" },
+})
 -- Mini Animate (Stutter Fix)
 local animate = require("mini.animate")
 animate.setup({
@@ -270,66 +338,179 @@ end
 --------------------------------------------------------------
 local map = vim.keymap.set
 
+local map = vim.keymap.set
+
 -- Config & File
 map("n", "<leader>o", ":update<CR>:source<CR>", { desc = "Reload Config" })
-map("n", "<leader>e", ":Oil<CR>", { desc = "Oil" })
-map({ "n", "v" }, "<leader>p", '"0p', { desc = "Paste from Yank" })
+map("n", "<leader>e", ":Oil<CR>", { desc = "Explorer (Oil)" })
+map({ "n", "v" }, "<leader>p", '"0p', { desc = "Paste (No yank)" })
 
 -- LSP & Formatting
-map("n", "<leader>lf", vim.lsp.buf.format)
-map("n", "<leader>k", vim.lsp.buf.hover)
-map("n", "gd", vim.lsp.buf.definition)
-map("n", "gD", vim.lsp.buf.declaration)
-map("n", "gr", vim.lsp.buf.references)
-map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action)
+map("n", "<leader>lf", vim.lsp.buf.format, { desc = "Format (LSP)" })
+map("n", "<leader>k", vim.lsp.buf.hover, { desc = "Hover Documentation" })
+map("n", "gd", vim.lsp.buf.definition, { desc = "Go to Definition" })
+map("n", "gD", vim.lsp.buf.declaration, { desc = "Go to Declaration" })
+map("n", "gr", vim.lsp.buf.references, { desc = "Go to References" })
+map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, { desc = "Code Action" })
 map("n", "<leader>cf", function()
 	conform.format({ async = true })
-end)
+end, { desc = "Format (Conform)" })
 
 -- Navigation (Quickfix & Trouble)
-map("n", "]q", "<cmd>cnext<CR>zz")
-map("n", "[q", "<cmd>cprevious<CR>zz")
-map("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>")
+map("n", "]q", "<cmd>cnext<CR>zz", { desc = "Next QF Item" })
+map("n", "[q", "<cmd>cprevious<CR>zz", { desc = "Prev QF Item" })
+map("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", { desc = "Toggle Trouble" })
 map("n", "]t", function()
 	require("trouble").next({ jump = true })
-end)
+end, { desc = "Next Trouble" })
 map("n", "[t", function()
 	require("trouble").previous({ jump = true })
-end)
+end, { desc = "Prev Trouble" })
+
+-- Snacks
+vim.keymap.set("n", "<leader>np", function()
+	Snacks.scratch()
+end, { desc = "Toggle Scratchpad" })
+vim.keymap.set("n", "<leader>N", function()
+	Snacks.scratch.select()
+end, { desc = "Select Scratch History" })
 
 -- Mini.Pick
 require("mini.pick").setup()
-map("n", "<leader>ff", ":Pick files<CR>")
-map("n", "<leader>ft", ":Pick grep<CR>")
-map("n", "<leader>fb", ":Pick buffers<CR>")
-map("n", "<leader>fh", ":Pick help<CR>")
+map("n", "<leader>ff", ":Pick files<CR>", { desc = "Find Files" })
+map("n", "<leader>ft", ":Pick grep<CR>", { desc = "Find Text (Grep)" })
+map("n", "<leader>fb", ":Pick buffers<CR>", { desc = "Find Buffers" })
+map("n", "<leader>fh", ":Pick help<CR>", { desc = "Find Help Tags" })
 
+map("n", "<leader>fk", function()
+	local items = {}
+	-- Get all normal mode keys (global + buffer local)
+	local keys = vim.api.nvim_get_keymap("n")
+	vim.list_extend(keys, vim.api.nvim_buf_get_keymap(0, "n"))
+
+	for _, key in ipairs(keys) do
+		-- Only show keys that have a description (your custom ones)
+		if key.desc then
+			table.insert(items, string.format("%-15s %s", key.lhs, key.desc))
+		end
+	end
+
+	require("mini.pick").start({
+		source = {
+			items = items,
+			name = "Keymaps",
+		},
+	})
+end, { desc = "Find Keymaps" })
+-- 1. Helper to find "Real" Source
+-- local function get_map_source(sid)
+-- 	-- If script ID is 0, it's usually an interactive command or an anonymous callback
+-- 	if sid == 0 then
+-- 		return "Global"
+-- 	end
+--
+-- 	local script_info = vim.fn.getscriptinfo({ sid = sid })[1]
+-- 	if not script_info then
+-- 		return "Unknown"
+-- 	end
+--
+-- 	local path = script_info.name
+--
+-- 	-- 1. PRIORITY: Check for Plugins (Native Pack)
+-- 	-- Look for pattern: .../pack/<any_vendor>/<start_or_opt>/<PLUGIN_NAME>/...
+-- 	-- This ensures we catch it before checking for 'init.lua'
+-- 	local plugin_name = path:match("pack/[^/]+/[^/]+/([^/]+)")
+-- 	if plugin_name then
+-- 		-- Optional: strip .nvim suffix for cleaner look
+-- 		return plugin_name:gsub("%.nvim$", "")
+-- 	end
+--
+-- 	-- 2. Check for YOUR Config
+-- 	-- Specifically looks for your main init.lua in the config root
+-- 	if path:match("nvim/init%.lua") then
+-- 		return "Config"
+-- 	end
+--
+-- 	-- 3. Fallback: Return the filename without path for random lua files
+-- 	return path:match("([^/]+)%.lua$") or "Runtime"
+-- end
+
+map("n", "<leader>fk", function()
+	local function get_map_source(sid)
+		if sid == 0 then
+			return "Global"
+		end
+		local info = vim.fn.getscriptinfo({ sid = sid })[1]
+		if not info then
+			return "Unknown"
+		end
+		local path = info.name
+
+		-- Fix: Check for plugin path first
+		local plugin = path:match("pack/[^/]+/[^/]+/([^/]+)")
+		if plugin then
+			return plugin:gsub("%.nvim$", "")
+		end
+
+		if path:match("nvim/init%.lua") then
+			return "Config"
+		end
+		return path:match("([^/]+)%.lua$") or "Runtime"
+	end
+
+	local items = {}
+	local keys = vim.api.nvim_get_keymap("n")
+	vim.list_extend(keys, vim.api.nvim_buf_get_keymap(0, "n"))
+
+	for _, key in ipairs(keys) do
+		local lhs = key.lhs
+		-- Clean up noise
+		if not lhs:match("^<Plug>") and not lhs:match("^<SNR>") then
+			local source = get_map_source(key.script or 0)
+			local desc = key.desc
+
+			-- Fallback for no description
+			if not desc or desc == "" then
+				desc = (type(key.rhs) == "string" and key.rhs) or "<Lua Callback>"
+				desc = desc:gsub("\r", ""):gsub("\n", "")
+			end
+
+			table.insert(items, string.format("%-12s │ %-15s │ %s", lhs, source, desc))
+		end
+	end
+
+	require("mini.pick").start({
+		source = { items = items, name = "Active Keymaps" },
+		window = { config = { width = 100 } },
+	})
+end, { desc = "Find All Keymaps" })
 -- Neotest
 map("n", "<leader>tt", function()
 	neotest.run.run()
-end)
+end, { desc = "Run Nearest Test" })
 map("n", "<leader>tf", function()
 	neotest.run.run(vim.fn.expand("%"))
-end)
+end, { desc = "Run File" })
 map("n", "<leader>ta", function()
 	neotest.run.run("test")
-end)
+end, { desc = "Run Suite" })
 map("n", "<leader>ts", function()
 	neotest.summary.toggle()
-end)
+end, { desc = "Toggle Summary" })
 map("n", "<leader>to", function()
 	neotest.output.open({ enter = true })
-end)
+end, { desc = "Show Output" })
 
 -- DAP
-map("n", "<leader>db", dap.toggle_breakpoint)
-map("n", "<leader>dc", dap.continue)
-map("n", "<leader>dt", dap.terminate)
+map("n", "<leader>db", dap.toggle_breakpoint, { desc = "Toggle Breakpoint" })
+map("n", "<leader>dc", dap.continue, { desc = "Continue / Start" })
+map("n", "<leader>dt", dap.terminate, { desc = "Terminate" })
 map("n", "<leader>dl", function()
 	dapui.toggle()
-end)
+end, { desc = "Toggle UI" })
+
 -- NeoGit
-vim.keymap.set("n", "<leader>ng", "<cmd>Neogit<cr>", { desc = "Open Neogit UI" })
+vim.keymap.set("n", "<leader>ng", "<cmd>Neogit<cr>", { desc = "Open Neogit" })
 --------------------------------------------------------------
 -- 8. Autocmds
 --------------------------------------------------------------
