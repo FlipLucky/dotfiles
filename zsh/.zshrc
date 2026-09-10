@@ -137,3 +137,4 @@ export PATH=$PATH:$(go env GOPATH)/bin
 if [[ -z "$TMUX" && -n "$PS1" ]]; then
     tmux attach-session -t default || tmux new-session -s default
 fi
+export PATH="$HOME/.local/bin:$PATH"

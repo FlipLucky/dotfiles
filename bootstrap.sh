@@ -24,7 +24,7 @@ set -e
 
 # Define variables for versions and paths
 GO_VERSION="1.22.5"
-DOTFILES_REPO="https://github.com/your-username/dotfiles.git" # <-- CHANGE THIS
+DOTFILES_REPO="git@github.com:FlipLucky/dotfiles.git"
 DOTFILES_DIR="$HOME/dotfiles"
 
 # --- 1. PRE-RUN CHECKS AND SUDO PROMPT ---

@@ -1,4 +1,5 @@
 --------------------------------------------------------------
+---
 -- 1. Globals & Options
 --------------------------------------------------------------
 vim.g.mapleader = " "
@@ -28,7 +29,15 @@ opt.breakindent = true
 opt.splitright = true
 opt.splitbelow = true
 opt.winborder = "rounded"
-opt.clipboard:append({ "unnamed", "unnamedplus" })
+vim.opt.conceallevel = 2
+vim.opt.concealcursor = "nc"
+-- vim.g.clipboard = {
+-- 	name = "wl-copy",
+-- 	copy = { ["+"] = "wl-copy", ["*"] = "wl-copy" },
+-- 	paste = { ["+"] = "wl-paste", ["*"] = "wl-paste" },
+-- 	cache_enabled = 0,
+-- }
+opt.clipboard = "unnamedplus"
 
 vim.opt.spell = true
 vim.opt.spelllang = { "en_us", "nl" }
@@ -83,7 +92,10 @@ vim.pack.add({
 	},
 	{ src = "https://github.com/rafamadriz/friendly-snippets" },
 	{ src = "https://github.com/nvim-flutter/flutter-tools.nvim" },
-	{ src = "https://github.com/L3MON4D3/LuaSnip", branch = "master" },
+	{
+		src = "https://github.com/L3MON4D3/LuaSnip",
+		branch = "master",
+	},
 	{ src = "https://github.com/nvim-treesitter/nvim-treesitter" },
 	{ src = "https://github.com/ray-x/go.nvim" },
 	{ src = "https://github.com/ray-x/guihua.lua" },
@@ -107,6 +119,8 @@ vim.pack.add({
 	{ src = "https://github.com/NeogitOrg/neogit" },
 	{ src = "https://github.com/folke/which-key.nvim" },
 	{ src = "https://github.com/folke/snacks.nvim" },
+	{ src = "https://github.com/A7Lavinraj/fyler.nvim.git" },
+	{ src = "https://github.com/nvim-orgmode/orgmode" },
 
 	-- Keymaps
 })
@@ -127,7 +141,6 @@ require("nvim-treesitter.configs").setup({
 		enable = true,
 	},
 })
-require("match-up").setup({})
 require("bamboo").load()
 require("mini.pairs").setup()
 local ai = require("mini.ai")
@@ -170,6 +183,77 @@ require("snacks").setup({
 	-- other modules...
 })
 require("oil").setup()
+local fyler = require("fyler")
+fyler.setup({})
+
+-- Open as an overview tree on the left side
+vim.keymap.set("n", "<leader>pv", function()
+	fyler.open({ kind = "split_left_most" })
+end, { desc = "Open Fyler Tree View" })
+
+-- Open as a quick floating window centered over your workspace
+vim.keymap.set("n", "<leader>pf", function()
+	fyler.open({ kind = "float" })
+end, { desc = "Open Fyler Float" })
+
+-- org mode
+require("orgmode").setup({
+	-- Centralized Org files directory structure
+	org_agenda_files = { "~/orgmode/**/*" },
+	org_default_notes_file = "~/orgmode/refile.org",
+
+	-- Custom state transitions and access mappings
+	org_todo_keywords = { "TODO(t)", "NEXT(n)", "WAITING(w)", "|", "DONE(d)" },
+
+	-- Custom visual styling for task keywords
+	org_todo_keyword_faces = {
+		TODO = ":foreground #FF5555 :weight bold",
+		NEXT = ":foreground #FFB86C :weight bold",
+		WAITING = ":foreground #8BE9FD :slant italic",
+		DONE = ":foreground #50FA7B :weight bold :underline on",
+	},
+
+	-- Structural property logging configurations
+	org_log_into_drawer = "LOGBOOK",
+	org_log_done = "time", -- Logs a CLOSED timestamp when marked DONE
+	org_log_repeat = "time", -- Logs repetition metadata
+
+	-- User interface and split-pane configurations
+	win_split_mode = "horizontal", -- Split behavior for capture and agenda windows
+	org_startup_folded = "overview", -- Default folding level on boot
+
+	-- Tailored Capture Templates for the daily workflows
+	org_capture_templates = {
+		t = {
+			description = "Work Ticket Task",
+			template = "* TODO Task: %?\n  %U\n  TICKET: ",
+			target = "~/orgmode/projects.org",
+		},
+		m = {
+			description = "Meeting Notes",
+			template = "* Meeting: %?\n  Captured on: %U\n  :PROPERTIES:\n  :CATEGORY: meetings\n  :END:\n  ** Agenda\n  ** Discussion Notes\n  ** Action Items [/]\n     - [ ] ",
+			target = "~/orgmode/meetings.org",
+		},
+		h = {
+			description = "Recurring Habit",
+			template = "* TODO %?\n  SCHEDULED: %t\n  :PROPERTIES:\n  :CATEGORY: habits\n  :END:",
+			target = "~/orgmode/habits.org",
+		},
+		i = {
+			description = "Unstructured Idea",
+			template = "* %?\n  Captured on: %u",
+			target = "~/orgmode/ideas.org",
+		},
+		c = {
+			description = "Colleague Interruption Task",
+			template = "* TODO Help Colleague: %? :INTERRUPTION:\n  %U\n  TICKET: ",
+			target = "~/orgmode/projects.org",
+		},
+	},
+})
+-- Experimental LSP support
+vim.lsp.enable("org")
+
 require("peek").setup()
 require("fastaction").setup({})
 require("trouble").setup()
@@ -219,12 +303,14 @@ require("mini.snippets").setup({
 -- Conform (Formatting Fix)
 local conform = require("conform")
 conform.setup({
-	formatters_by_ft = { php = { "phpcbf" } },
+	formatters_by_ft = {
+		php = { "phpcbf" },
+		javascript = { "prettier" },
+		typescript = { "prettier" },
+	},
 	formatters = {
 		phpcbf = {
-			command = function()
-				return require("conform.util").find_executable({ "vendor/bin/phpcbf", "phpcbf" }, "phpcbf")
-			end,
+			command = "phpcbf",
 		},
 	},
 	default_format_opts = { lsp_format = "fallback" },
@@ -236,7 +322,11 @@ neotest.setup({
 	adapters = {
 		require("neotest-phpunit")({ filter_dirs = { "vendor" } }),
 		require("neotest-dart")({ command = "flutter test" }),
-		require("neotest-golang"),
+		require("neotest-golang")({
+			go_test_args = { "-v", "-count=1" }, -- Remove "-race" if you don't want to force CGO
+			-- OR
+			env = { CGO_ENABLED = "1" },
+		}),
 	},
 	output = { open_on_run = true },
 	status = { virtual_text = true },
@@ -256,6 +346,14 @@ blink.setup({
 		default = { "lsp", "path", "snippets", "buffer" },
 		per_filetype = {
 			go = { "lsp", "path", "snippets" },
+			org = { "orgmode" }, -- Cleanly isolated filetype source
+		},
+		providers = {
+			orgmode = {
+				name = "Orgmode",
+				module = "orgmode.org.autocompletion.blink",
+				fallbacks = { "buffer" }, -- Fixed typo: 'fallbakcs' -> 'fallbacks'
+			},
 		},
 	},
 	completion = {
@@ -304,12 +402,20 @@ vim.lsp.config("emmet_ls", {
 })
 
 -- Language Specific Tools
-require("go").setup({ lsp_cfg = { capabilities = caps } })
+require("go").setup({ lsp_cfg = { capabilities = caps }, lsp_keymaps = false })
 require("flutter-tools").setup({
 	lsp = {
 		capabilities = caps,
 		color_render = true,
 		settings = { showTodos = true, completeFunctionCalls = true },
+	},
+	-- Add this block:
+	debugger = {
+		enabled = true,
+		run_via_dap = true,
+	},
+	dev_log = {
+		enabled = false, -- Optional: hides the noisy default log split
 	},
 })
 
@@ -338,10 +444,8 @@ end
 --------------------------------------------------------------
 local map = vim.keymap.set
 
-local map = vim.keymap.set
-
 -- Config & File
-map("n", "<leader>o", ":update<CR>:source<CR>", { desc = "Reload Config" })
+-- map("n", "<leader>o", ":update<CR>:source<CR>", { desc = "Reload Config" })
 map("n", "<leader>e", ":Oil<CR>", { desc = "Explorer (Oil)" })
 map({ "n", "v" }, "<leader>p", '"0p', { desc = "Paste (No yank)" })
 
@@ -381,59 +485,6 @@ map("n", "<leader>ff", ":Pick files<CR>", { desc = "Find Files" })
 map("n", "<leader>ft", ":Pick grep<CR>", { desc = "Find Text (Grep)" })
 map("n", "<leader>fb", ":Pick buffers<CR>", { desc = "Find Buffers" })
 map("n", "<leader>fh", ":Pick help<CR>", { desc = "Find Help Tags" })
-
-map("n", "<leader>fk", function()
-	local items = {}
-	-- Get all normal mode keys (global + buffer local)
-	local keys = vim.api.nvim_get_keymap("n")
-	vim.list_extend(keys, vim.api.nvim_buf_get_keymap(0, "n"))
-
-	for _, key in ipairs(keys) do
-		-- Only show keys that have a description (your custom ones)
-		if key.desc then
-			table.insert(items, string.format("%-15s %s", key.lhs, key.desc))
-		end
-	end
-
-	require("mini.pick").start({
-		source = {
-			items = items,
-			name = "Keymaps",
-		},
-	})
-end, { desc = "Find Keymaps" })
--- 1. Helper to find "Real" Source
--- local function get_map_source(sid)
--- 	-- If script ID is 0, it's usually an interactive command or an anonymous callback
--- 	if sid == 0 then
--- 		return "Global"
--- 	end
---
--- 	local script_info = vim.fn.getscriptinfo({ sid = sid })[1]
--- 	if not script_info then
--- 		return "Unknown"
--- 	end
---
--- 	local path = script_info.name
---
--- 	-- 1. PRIORITY: Check for Plugins (Native Pack)
--- 	-- Look for pattern: .../pack/<any_vendor>/<start_or_opt>/<PLUGIN_NAME>/...
--- 	-- This ensures we catch it before checking for 'init.lua'
--- 	local plugin_name = path:match("pack/[^/]+/[^/]+/([^/]+)")
--- 	if plugin_name then
--- 		-- Optional: strip .nvim suffix for cleaner look
--- 		return plugin_name:gsub("%.nvim$", "")
--- 	end
---
--- 	-- 2. Check for YOUR Config
--- 	-- Specifically looks for your main init.lua in the config root
--- 	if path:match("nvim/init%.lua") then
--- 		return "Config"
--- 	end
---
--- 	-- 3. Fallback: Return the filename without path for random lua files
--- 	return path:match("([^/]+)%.lua$") or "Runtime"
--- end
 
 map("n", "<leader>fk", function()
 	local function get_map_source(sid)
@@ -530,6 +581,10 @@ vim.api.nvim_create_autocmd({ "CursorHold", "FocusLost", "BufLeave" }, {
 vim.api.nvim_create_autocmd("BufWritePre", {
 	group = augroup("LspFormatting", { clear = true }),
 	callback = function(args)
-		vim.lsp.buf.format({ bufnr = args.buf })
+		require("conform").format({
+			bufnr = args.buf,
+			lsp_fallback = true,
+			async = false,
+		})
 	end,
 })
