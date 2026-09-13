@@ -2,8 +2,9 @@
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
 # Path to your Oh My Zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
-
+export ZSH="/usr/share/oh-my-zsh"
+export LITTLE_CODER_SUBCODER_CONCURRENCY=1
+export OLLAMA_API_KEY=noop
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time Oh My Zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
@@ -119,22 +120,36 @@ alias gc='git commit'
 alias gs='git status'
 alias gbc='git branch --show-current'
 alias np='nvim ~/Documents/notes.md'
+alias task='go-task'
 
+source /usr/share/nvm/init-nvm.sh
 export NVM_DIR="$HOME/.config/nvm"
 export PATH=$PATH:/usr/local/go/bin
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 [[ -s "/home/bnoblesse/.gvm/scripts/gvm" ]] && source "/home/bnoblesse/.gvm/scripts/gvm"
-
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+export ANDROID_HOME=/opt/android-sdk
+export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin
 export RM_DEVELOPER_IDENTITY="bas"
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 export N8N_LOG_LEVEL=debug
 export N8N_DEV_RELOAD=true
-export PATH=$PATH:$(go env GOPATH)/bin
+
+# export PATH=$PATH:$(go env GOPATH)/bin
 
 # Only launch tmux if we are in an interactive shell and NOT already in tmux
-if [[ -z "$TMUX" && -n "$PS1" ]]; then
-    tmux attach-session -t default || tmux new-session -s default
+# if [[ -z "$TMUX" && -n "$PS1" ]]; then
+#     tmux attach-session -t default || tmux new-session -s default
+# fi
+if [[ -z "$TMUX" && "$TERM_PROGRAM" != "vscode" && -n "$PS1" ]]; then
+    # Ensure we aren't in a TTY (optional, remove if you want tmux in TTY)
+    if [[ $(tty) != /dev/tty* ]]; then
+        exec tmux new-session -A -s default
+    fi
 fi
 export PATH="$HOME/.local/bin:$PATH"
+
+# Add this to the end of ~/.bashrc
+# eval "$(mise activate bash)"
