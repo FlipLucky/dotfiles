@@ -1,5 +1,7 @@
 {
     "diagnostics.globals": [
-        "bufnr"
+        "bufnr",
+        "vim",
+        "hl"
     ]
 }
