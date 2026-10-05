@@ -149,6 +149,11 @@ writes land directly in the repo.
 Keyboard: `kb_options = "caps:ctrl_modifier,compose:rctrl"` mirrors the GNOME
 `xkb-options` on the laptop. Changes apply with `hyprctl reload`.
 
+After any git operation that rewrites the working tree (`pull --rebase`,
+`checkout`, `stash`) run `hyprctl reload`: if `hyprland.lua` briefly
+disappears, Hyprland reports "cannot open .../hyprland.lua" and loses its
+file watch until reloaded, even though the file is back.
+
 Not in this repo: a systemd drop-in at
 `~/.config/systemd/user/dms.service.d/hyprland-order.conf`
 (`[Unit] After=hyprland-session.target`) that fixes an ordering cycle

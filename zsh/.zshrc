@@ -2,7 +2,12 @@
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
 # Path to your Oh My Zsh installation.
-export ZSH="/usr/share/oh-my-zsh"
+# Arch (T14) packages Oh My Zsh system-wide; Ubuntu uses the per-user install
+if [[ -d /usr/share/oh-my-zsh ]]; then
+    export ZSH="/usr/share/oh-my-zsh"
+else
+    export ZSH="$HOME/.oh-my-zsh"
+fi
 export LITTLE_CODER_SUBCODER_CONCURRENCY=1
 export OLLAMA_API_KEY=noop
 # Set name of the theme to load --- if set to "random", it will
@@ -122,22 +127,24 @@ alias gbc='git branch --show-current'
 alias np='nvim ~/Documents/notes.md'
 alias task='go-task'
 
-source /usr/share/nvm/init-nvm.sh
+[[ -s /usr/share/nvm/init-nvm.sh ]] && source /usr/share/nvm/init-nvm.sh
 export NVM_DIR="$HOME/.config/nvm"
 export PATH=$PATH:/usr/local/go/bin
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 [[ -s "/home/bnoblesse/.gvm/scripts/gvm" ]] && source "/home/bnoblesse/.gvm/scripts/gvm"
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
-export ANDROID_HOME=/opt/android-sdk
-export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin
+[[ -d /usr/lib/jvm/java-17-openjdk ]] && export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+if [[ -d /opt/android-sdk ]]; then
+    export ANDROID_HOME=/opt/android-sdk
+    export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin
+fi
 export RM_DEVELOPER_IDENTITY="bas"
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 export N8N_LOG_LEVEL=debug
 export N8N_DEV_RELOAD=true
 
-# export PATH=$PATH:$(go env GOPATH)/bin
+command -v go >/dev/null && export PATH=$PATH:$(go env GOPATH)/bin
 
 # Only launch tmux if we are in an interactive shell and NOT already in tmux
 # if [[ -z "$TMUX" && -n "$PS1" ]]; then
