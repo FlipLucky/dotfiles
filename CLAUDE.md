@@ -14,6 +14,7 @@ root, or `stow */` to link everything (what `bootstrap.sh` does).
 
 ```
 bash/    .bashrc
+firefox-snap/  .local/share/applications/firefox_firefox.desktop (DMS WebGL fix)
 git/     .gitconfig
 hypr/    .config/hypr/  (hyprland.lua + dms/ fragments)
 nvim/    .config/nvim/  (init.lua, lua/config/, snippets/, lsp/, pack/)
@@ -153,6 +154,15 @@ After any git operation that rewrites the working tree (`pull --rebase`,
 `checkout`, `stash`) run `hyprctl reload`: if `hyprland.lua` briefly
 disappears, Hyprland reports "cannot open .../hyprland.lua" and loses its
 file watch until reloaded, even though the file is back.
+
+DMS exports `__EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json`
+(hybrid Intel/NVIDIA) to every app it launches. Inside a `core24` snap that
+path doesn't exist, so snap apps lose EGL — Firefox shows "WebGL isn't
+supported" (Figma). The `firefox-snap` package overrides the snap's desktop
+entry with `env -u __EGL_VENDOR_LIBRARY_FILENAMES`; `TryExec` hides it on
+machines without the snap. It's a copy, so regenerate it from
+`/var/lib/snapd/desktop/applications/firefox_firefox.desktop` if the snap's
+entry changes. Other snaps launched from DMS need the same treatment.
 
 Not in this repo: a systemd drop-in at
 `~/.config/systemd/user/dms.service.d/hyprland-order.conf`
