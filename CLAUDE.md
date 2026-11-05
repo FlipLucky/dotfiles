@@ -131,7 +131,9 @@ Prefix remapped `C-b` → `C-a`. vi copy-mode keys. Custom pane-split binds:
 (note these are plain-prefix binds, not `-n`, so they don't collide with
 normal `hjkl` typing). Plugins via TPM: `tmux-plugins/tpm`,
 `catppuccin/tmux` (mocha flavor). Status line sourced from
-`~/.config/tmux/plugins/catppuccin/tmux/catppuccin.tmux` — if the status bar
+`~/.config/tmux/plugins/catppuccin/tmux/catppuccin.tmux`. `allow-passthrough`
+and `focus-events` are on so inline images (Ghostty/kitty graphics, Claude
+Code mod panes) reach the outer terminal. If the status bar
 looks unstyled, check TPM actually installed plugins (`prefix + I`) before
 assuming a config typo.
 
