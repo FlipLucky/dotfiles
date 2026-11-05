@@ -1,0 +1,6 @@
+{
+  "name": "d2-pane",
+  "version": "0.1.0",
+  "description": "Renders .d2 diagrams Claude writes or edits (or /d2 <file>) as an image in a pane",
+  "types": "./types/index.d.ts"
+}
