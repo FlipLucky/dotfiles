@@ -42,7 +42,7 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 # --- 2. SYSTEM UPDATE & CORE DEPENDENCIES ---
 echo "🔄 Updating packages and installing core dependencies..."
 sudo apt-get update
-sudo apt-get install -y git stow curl wget build-essential zsh
+sudo apt-get install -y git stow curl wget build-essential zsh git-delta
 # Neovim runtime deps: pickers (rg/fd), clipboard (Wayland + X11),
 # Mason (unzip, python venvs for pip-based tools)
 sudo apt-get install -y ripgrep fd-find wl-clipboard xclip unzip python3-venv
