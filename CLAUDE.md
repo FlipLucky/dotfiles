@@ -68,10 +68,12 @@ anything; if reviving the modular split is wanted, that's a real refactor
   order — no lazy-loading by event/filetype/command like lazy.nvim. "Lazy
   loading" here means deferring the `require(...).setup()` call itself via
   an autocmd, not deferring install.
-- A `build = "..."` field (e.g. `blink.cmp`'s `cargo build --release`) runs
-  once at install/update. If the toolchain wasn't on `$PATH` then, the
-  plugin directory exists but is non-functional — looks like an unrelated
-  runtime bug (completion/hover broken) rather than an install failure.
+- A spec only knows `src`, `name`, `version`, `data`. lazy.nvim-style keys
+  (`branch`, `build`) are **silently ignored**: the plugin tracks its default
+  branch and no build step runs. Pin with `version` (a tag, branch or
+  `vim.version.range("1.*")`); run build steps from a `PackChanged` autocmd.
+  `blink.cmp` is pinned to a `1.*` release tag so it downloads its prebuilt
+  fuzzy binary instead of needing Rust.
 - No lockfile auto-sync; updates are explicit (`vim.pack.update`).
 
 ### Native LSP stack
@@ -208,13 +210,11 @@ not a leak to clean up.
 
 Fresh-machine setup script (Ubuntu/apt only — no Arch branch, unlike the
 Neovim-config assumptions above). Installs Oh My Zsh, clones this repo,
-`stow */`, then Neovim nightly (AppImage), Go, Docker, NVM, tmux, and chsh's
-to zsh.
-
-**Known issue:** `DOTFILES_REPO` (near the top) is still the placeholder
-`https://github.com/your-username/dotfiles.git` — it was never updated to
-the actual repo (`git@github.com:FlipLucky/dotfiles.git`). Running this
-script fresh will fail to clone. Fix before relying on it for a new machine.
+`stow */`, then Neovim nightly (tarball in `/opt/nvim`), latest Go, Docker,
+NVM in `~/.config/nvm` + Node LTS, tmux, and chsh's to zsh. Also installs
+the Neovim runtime deps (ripgrep, fd + `fd` symlink, clipboard tools, unzip,
+python3-venv). Clones over HTTPS (no SSH key yet on a fresh machine) and sets
+the push URL to SSH.
 
 ## Neovim config helper skill
 

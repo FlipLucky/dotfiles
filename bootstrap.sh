@@ -23,9 +23,11 @@
 set -e
 
 # Define variables for versions and paths
-GO_VERSION="1.22.5"
-DOTFILES_REPO="git@github.com:FlipLucky/dotfiles.git"
+# Clone over HTTPS (a fresh machine has no SSH key yet); push goes over SSH.
+DOTFILES_REPO="https://github.com/FlipLucky/dotfiles.git"
+DOTFILES_PUSH="git@github.com:FlipLucky/dotfiles.git"
 DOTFILES_DIR="$HOME/dotfiles"
+export NVM_DIR="$HOME/.config/nvm"   # must match zsh/.zshrc
 
 # --- 1. PRE-RUN CHECKS AND SUDO PROMPT ---
 echo "🚀 Starting setup..."
@@ -40,7 +42,13 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 # --- 2. SYSTEM UPDATE & CORE DEPENDENCIES ---
 echo "🔄 Updating packages and installing core dependencies..."
 sudo apt-get update
-sudo apt-get install -y git stow curl build-essential zsh
+sudo apt-get install -y git stow curl wget build-essential zsh
+# Neovim runtime deps: pickers (rg/fd), clipboard (Wayland + X11),
+# Mason (unzip, python venvs for pip-based tools)
+sudo apt-get install -y ripgrep fd-find wl-clipboard xclip unzip python3-venv
+# Ubuntu ships fd as `fdfind`; plugins look for `fd`
+mkdir -p "$HOME/.local/bin"
+ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
 
 
 # --- 3. INSTALL ZSH & OH MY ZSH ---
@@ -58,6 +66,7 @@ fi
 if [ ! -d "$DOTFILES_DIR" ]; then
   echo "Cloning dotfiles repository from $DOTFILES_REPO..."
   git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+  git -C "$DOTFILES_DIR" remote set-url --push origin "$DOTFILES_PUSH"
 else
   echo "Dotfiles repository already exists at $DOTFILES_DIR."
 fi
@@ -74,16 +83,20 @@ stow */
 
 # --- 6. INSTALL APPLICATIONS AND TOOLCHAINS ---
 
-## Install Neovim (Nightly AppImage)
+## Install Neovim (Nightly tarball: vim.pack needs 0.12+)
+# The tarball avoids the AppImage's libfuse2 dependency. The old
+# `nvim.appimage` asset name is gone (404); -f makes curl fail instead of
+# saving the error page as the "binary".
 echo "👾 Installing Neovim (Nightly)..."
-# Download the AppImage to a temporary location
-curl -L https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage -o /tmp/nvim.appimage
-# Make it executable
-chmod +x /tmp/nvim.appimage
-# Move it to a location in the system's PATH
-sudo mv /tmp/nvim.appimage /usr/local/bin/nvim
+curl -fL https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz -o /tmp/nvim.tar.gz
+sudo rm -rf /opt/nvim
+sudo mkdir -p /opt/nvim
+sudo tar -C /opt/nvim --strip-components=1 -xzf /tmp/nvim.tar.gz
+sudo ln -sf /opt/nvim/bin/nvim /usr/local/bin/nvim
+rm /tmp/nvim.tar.gz
 
-## Install Go
+## Install Go: latest stable unless GO_VERSION is set (GO_VERSION=1.27.4 ./bootstrap.sh)
+GO_VERSION="${GO_VERSION:-$(curl -fsSL 'https://go.dev/VERSION?m=text' | head -1 | sed 's/^go//')}"
 echo "Installing Go v$GO_VERSION..."
 # Download the tarball
 wget -q "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -O /tmp/go.tar.gz
@@ -118,14 +131,21 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 sudo usermod -aG docker $USER
 echo "Docker installed. You may need to log out and log back in for group changes to take effect."
 
-## Install NVM (Node Version Manager)
+## Install NVM (Node Version Manager) + Node LTS
+# Into ~/.config/nvm (NVM_DIR above), which is where .zshrc looks; the
+# installer's default ~/.nvm would leave nvm "not found" in the shell.
+# Node is needed by Mason for npm-based language servers.
 echo "Installing NVM (Node Version Manager)..."
-if [ ! -d "$HOME/.nvm" ]; then
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+mkdir -p "$NVM_DIR"
+if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | PROFILE=/dev/null bash
 else
   echo "NVM is already installed."
 fi
-# Note: The sourcing of nvm.sh should be handled by your .zshrc
+set +e   # nvm.sh isn't safe under `set -e`
+. "$NVM_DIR/nvm.sh"
+nvm install --lts
+set -e
 
 
 # --- 7. CHANGE DEFAULT SHELL ---
@@ -145,7 +165,9 @@ echo ""
 echo "Next steps:"
 echo "1. Close and reopen your terminal to start using Zsh."
 echo "2. If you are not in a new zsh session, you may need to log out and log back in."
-echo "3. Run 'source ~/.zshrc' to load your new configuration."
-echo "4. Run 'nvm install --lts' to install the latest LTS version of Node.js."
+echo "3. Start nvim and accept the plugin install prompt (vim.pack), then restart it."
+echo "   Mason installs the language servers in the background; check with :Mason."
+echo "   blink.cmp downloads its prebuilt fuzzy binary, no Rust needed."
+echo "4. Copy your SSH key to ~/.ssh before pushing dotfiles (push goes over SSH)."
 
 

@@ -86,8 +86,9 @@ vim.pack.add({
     { src = "https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim" },
     {
         src = "https://github.com/saghen/blink.cmp",
-        branch = "v1.0.0",
-        build = "cargo build --release",
+        -- vim.pack has no `branch`/`build` keys (silently ignored). Pinning to a
+        -- release tag makes blink download its prebuilt fuzzy binary: no Rust.
+        version = vim.version.range("1.*"),
     },
     { src = "https://github.com/rafamadriz/friendly-snippets" },
     { src = "https://github.com/nvim-flutter/flutter-tools.nvim" },
