@@ -75,8 +75,13 @@ cd "$DOTFILES_DIR"
 
 # --- 5. SYMLINK DOTFILES WITH STOW ---
 echo "🔗 Symlinking dotfiles with GNU Stow..."
-# Remove the default .zshrc created by Oh My Zsh before stowing our own
-rm -f "$HOME/.zshrc"
+# A fresh install ships its own .bashrc (and Oh My Zsh just wrote a .zshrc).
+# Stow refuses to overwrite real files, so move them aside first.
+for f in .zshrc .bashrc .gitconfig .tmux.conf; do
+  if [ -f "$HOME/$f" ] && [ ! -L "$HOME/$f" ]; then
+    mv "$HOME/$f" "$HOME/$f.pre-stow"
+  fi
+done
 # Stow all packages. This will link your custom .zshrc, .tmux.conf, etc.
 stow */
 
